@@ -100,7 +100,75 @@ document.addEventListener('DOMContentLoaded', function() {
         this.showPicker();
     });
     
-    // 日期选择器变更事件处理
+    // 城市数据
+    const cities = [
+        // 直辖市
+        {'name': '北京', 'lat': 39.9042, 'lon': 116.4074},
+        {'name': '上海', 'lat': 31.2304, 'lon': 121.4737},
+        {'name': '天津', 'lat': 39.0842, 'lon': 117.2009},
+        {'name': '重庆', 'lat': 29.5630, 'lon': 106.5516},
+        
+        // 华东地区
+        {'name': '南京', 'lat': 32.0603, 'lon': 118.7969},
+        {'name': '杭州', 'lat': 30.2741, 'lon': 120.1551},
+        {'name': '青岛', 'lat': 36.0671, 'lon': 120.3826},
+        {'name': '厦门', 'lat': 24.4798, 'lon': 118.0894},
+        
+        // 华南地区
+        {'name': '广州', 'lat': 23.1291, 'lon': 113.2644},
+        {'name': '深圳', 'lat': 22.5431, 'lon': 114.0579},
+        {'name': '海口', 'lat': 20.0444, 'lon': 110.3244},
+        
+        // 华中地区
+        {'name': '武汉', 'lat': 30.5928, 'lon': 114.3055},
+        {'name': '长沙', 'lat': 28.2282, 'lon': 112.9388},
+        {'name': '郑州', 'lat': 34.7466, 'lon': 113.6254},
+        
+        // 华北地区
+        {'name': '太原', 'lat': 37.8735, 'lon': 112.5634},
+        {'name': '呼和浩特', 'lat': 40.8427, 'lon': 111.7491},
+        
+        // 西北地区
+        {'name': '西安', 'lat': 34.3416, 'lon': 108.9398},
+        {'name': '兰州', 'lat': 36.0594, 'lon': 103.8343},
+        {'name': '西宁', 'lat': 36.6232, 'lon': 101.7805},
+        {'name': '乌鲁木齐', 'lat': 43.8256, 'lon': 87.6168},
+        
+        // 西南地区
+        {'name': '成都', 'lat': 30.5728, 'lon': 104.0668},
+        {'name': '贵阳', 'lat': 26.6470, 'lon': 106.6302},
+        {'name': '昆明', 'lat': 25.0453, 'lon': 102.7097},
+        {'name': '拉萨', 'lat': 29.6500, 'lon': 91.1400},
+        
+        // 东北地区
+        {'name': '沈阳', 'lat': 41.8057, 'lon': 123.4315},
+        {'name': '长春', 'lat': 43.8170, 'lon': 125.3242},
+        {'name': '哈尔滨', 'lat': 45.8038, 'lon': 126.5340}
+    ];
+
+    // 县级城市数据
+    const counties = [
+        {'name': '张家口', 'lat': 40.7671, 'lon': 114.8806},
+        {'name': '大理', 'lat': 25.6065, 'lon': 100.2675},
+        {'name': '丽江', 'lat': 26.8721, 'lon': 100.2301},
+        {'name': '三亚', 'lat': 18.2534, 'lon': 109.5120},
+        {'name': '大连', 'lat': 38.9140, 'lon': 121.6147},
+        {'name': '苏州', 'lat': 31.2990, 'lon': 120.5853},
+        {'name': '宁波', 'lat': 29.8683, 'lon': 121.5440},
+        {'name': '珠海', 'lat': 22.2710, 'lon': 113.5767},
+        {'name': '威海', 'lat': 37.5130, 'lon': 122.1200},
+        {'name': '桂林', 'lat': 25.2736, 'lon': 110.2907}
+    ];
+
+    // OpenWeatherMap API Key
+    const WEATHER_API_KEY = '4c6c6c0d0c3c3c3c3c3c3c3c3c3c3c3c'; // 请替换为您的 API Key
+
+    // 获取所有城市数据
+    cities.forEach(city => {
+        addCityMarker(city);
+    });
+
+    // 修改日期选择器变更事件处理
     window.changeForecastDate = function(selectedDate) {
         const today = new Date();
         const selected = new Date(selectedDate);
@@ -109,219 +177,32 @@ document.addEventListener('DOMContentLoaded', function() {
         
         selectedDays = diffDays;
         
-        // 使用相对路径
-        fetch('./api/cities')
-            .then(response => response.json())
-            .then(cities => {
-                cities.forEach(city => fetchCityWeather(city));
-            })
-            .catch(error => console.error('刷新天气数据失败:', error));
+        // 刷新所有城市的天气数据
+        cities.forEach(city => fetchCityWeather(city));
             
         // 刷新县级城市天气数据（如果已加载）
-        if (countiesLoaded) {
-            fetch('./api/counties')
-                .then(response => response.json())
-                .then(counties => {
-                    counties.forEach(county => fetchCountyWeather(county));
-                })
-                .catch(error => console.error('刷新县级城市天气数据失败:', error));
-        }
-    };
-    
-    // 定义天气筛选函数
-    window.filterWeather = function(weatherType) {
-        filterApplied = true;
-        currentWeatherType = weatherType;
-        
-        // 处理主要城市
-        Object.keys(cityWeatherData).forEach(cityName => {
-            const weatherData = cityWeatherData[cityName];
-            const marker = cityMarkers[cityName];
-            
-            if (!marker) return;
-            
-            let shouldShow = false;
-            const weather = weatherData.weather.toLowerCase();
-            
-            switch(weatherType) {
-                case 'sunny':
-                    shouldShow = weather.includes('晴') || weather.includes('clear');
-                    break;
-                case 'cloudy':
-                    shouldShow = weather.includes('多云') || weather.includes('cloud') || weather.includes('阴') || weather.includes('overcast');
-                    break;
-                case 'rain':
-                    shouldShow = weather.includes('雨') || weather.includes('rain');
-                    break;
-                case 'snow':
-                    shouldShow = weather.includes('雪') || weather.includes('snow');
-                    break;
-            }
-            
-            if (shouldShow) {
-                marker.setOpacity(1);
-                // 让匹配的城市图标更大更明显
-                const icon = marker.getIcon();
-                const iconHtml = icon.options.html;
-                const newIcon = L.divIcon({
-                    html: iconHtml.replace('width:40px; height:40px', 'width:50px; height:50px'),
-                    className: 'weather-icon-marker weather-highlight',
-                    iconSize: [50, 50],
-                    iconAnchor: [25, 25]
-                });
-                marker.setIcon(newIcon);
-            } else {
-                // 其他城市变暗
-                marker.setOpacity(0.3);
-            }
-        });
-        
-        // 处理县级城市（如果已加载）
         if (countiesLoaded && showCounties) {
-            Object.keys(countyWeatherData).forEach(countyName => {
-                const weatherData = countyWeatherData[countyName];
-                const marker = countyMarkers[countyName];
-                
-                if (!marker) return;
-                
-                let shouldShow = false;
-                const weather = weatherData.weather.toLowerCase();
-                
-                switch(weatherType) {
-                    case 'sunny':
-                        shouldShow = weather.includes('晴') || weather.includes('clear');
-                        break;
-                    case 'cloudy':
-                        shouldShow = weather.includes('多云') || weather.includes('cloud') || weather.includes('阴') || weather.includes('overcast');
-                        break;
-                    case 'rain':
-                        shouldShow = weather.includes('雨') || weather.includes('rain');
-                        break;
-                    case 'snow':
-                        shouldShow = weather.includes('雪') || weather.includes('snow');
-                        break;
-                }
-                
-                if (shouldShow) {
-                    marker.setOpacity(1);
-                    // 让匹配的县级城市图标更大更明显，但比主要城市小
-                    const icon = marker.getIcon();
-                    const iconHtml = icon.options.html;
-                    const newIcon = L.divIcon({
-                        html: iconHtml.replace('width:30px; height:30px', 'width:40px; height:40px'),
-                        className: 'weather-icon-marker county-marker weather-highlight',
-                        iconSize: [40, 40],
-                        iconAnchor: [20, 20]
-                    });
-                    marker.setIcon(newIcon);
-                } else {
-                    // 其他县级城市变暗
-                    marker.setOpacity(0.3);
-                }
-            });
+            counties.forEach(county => fetchCountyWeather(county));
         }
     };
-    
-    // 定义重置筛选的函数
-    window.resetFilter = function() {
-        filterApplied = false;
-        currentWeatherType = '';
-        
-        // 重置主要城市
-        Object.keys(cityMarkers).forEach(cityName => {
-            const marker = cityMarkers[cityName];
-            if (!marker) return;
-            
-            // 恢复原始不透明度
-            marker.setOpacity(1);
-            
-            // 恢复原始图标大小
-            const weatherData = cityWeatherData[cityName];
-            if (weatherData) {
-                updateMarkerIcon(cityName, weatherData);
-            }
+
+    // 修改加载县级城市数据的函数
+    function loadCountyCities() {
+        counties.forEach(county => {
+            addCountyMarker(county);
         });
-        
-        // 重置县级城市（如果已加载）
-        if (countiesLoaded && showCounties) {
-            Object.keys(countyMarkers).forEach(countyName => {
-                const marker = countyMarkers[countyName];
-                if (!marker) return;
-                
-                // 恢复原始不透明度
-                marker.setOpacity(1);
-                
-                // 恢复原始图标大小
-                const weatherData = countyWeatherData[countyName];
-                if (weatherData) {
-                    updateCountyMarkerIcon(countyName, weatherData);
-                }
-            });
-        }
-    };
-    
-    // 根据天气状态获取对应的图标文件名
-    function getLocalIconByWeatherCode(iconCode, weatherDescription) {
-        // 先根据iconCode查找
-        let iconFileName = weatherIconMap[iconCode];
-        
-        // 如果没找到，则根据天气描述判断
-        if (!iconFileName) {
-            if (weatherDescription.includes('晴') || weatherDescription.includes('clear')) {
-                iconFileName = 'sunny.png';
-            } else if (weatherDescription.includes('多云') || weatherDescription.includes('cloud')) {
-                iconFileName = 'douyun.png';
-            } else if (weatherDescription.includes('阴') || weatherDescription.includes('overcast')) {
-                iconFileName = 'yintian.png';
-            } else if (weatherDescription.includes('雷') || weatherDescription.includes('thunder')) {
-                iconFileName = 'leizhenyu.png';
-            } else if (weatherDescription.includes('暴雨') || weatherDescription.includes('heavy rain')) {
-                iconFileName = 'dawu.png';
-            } else if (weatherDescription.includes('大雨') || weatherDescription.includes('rainstorm')) {
-                iconFileName = 'dayu.png';
-            } else if (weatherDescription.includes('中雨') || weatherDescription.includes('moderate rain')) {
-                iconFileName = 'zhongyu.png';
-            } else if (weatherDescription.includes('小雨') || weatherDescription.includes('light rain')) {
-                iconFileName = 'xiaoyu.png';
-            } else if (weatherDescription.includes('雨') || weatherDescription.includes('rain')) {
-                iconFileName = 'xiaoyu.png';
-            } else if (weatherDescription.includes('雪') || weatherDescription.includes('snow')) {
-                iconFileName = 'snow.png';
-            } else {
-                iconFileName = 'sunny.png'; // 默认图标
-            }
-        }
-        
-        return `static/weather_icon/${iconFileName}`;
-    }
-    
-    // 自定义图标创建函数
-    function createWeatherIcon(iconCode, weatherDescription = '', isCounty = false) {
-        const iconPath = getLocalIconByWeatherCode(iconCode, weatherDescription);
-        
-        const imgSize = isCounty ? 30 : 40;
-        const className = isCounty ? 'weather-icon-marker county-marker' : 'weather-icon-marker';
-        
-        return L.divIcon({
-            html: `<img src="${iconPath}" style="width:${imgSize}px; height:${imgSize}px;">`,
-            className: className,
-            iconSize: [imgSize, imgSize],
-            iconAnchor: [imgSize/2, imgSize/2]
-        });
+        countiesLoaded = true;
     }
 
-    // OpenWeatherMap API Key
-    const WEATHER_API_KEY = process.env.WEATHER_API_KEY;
-
-    // 获取所有城市数据
-    fetch('./api/cities')
-        .then(response => response.json())
-        .then(cities => {
-            cities.forEach(city => {
-                addCityMarker(city);
-            });
-        })
-        .catch(error => console.error('获取城市数据失败:', error));
+    // 添加自动刷新定时器（每10分钟更新一次）
+    setInterval(() => {
+        cities.forEach(city => fetchCityWeather(city));
+            
+        // 刷新县级城市天气数据（如果已加载并显示）
+        if (countiesLoaded && showCounties) {
+            counties.forEach(county => fetchCountyWeather(county));
+        }
+    }, 600000); // 10分钟 = 600000毫秒
 
     // 添加城市标记的函数
     function addCityMarker(city) {
@@ -488,19 +369,6 @@ document.addEventListener('DOMContentLoaded', function() {
         }
     };
     
-    // 加载县级城市数据
-    function loadCountyCities() {
-        fetch('./api/counties')
-            .then(response => response.json())
-            .then(counties => {
-                counties.forEach(county => {
-                    addCountyMarker(county);
-                });
-                countiesLoaded = true;
-            })
-            .catch(error => console.error('获取县级城市数据失败:', error));
-    }
-    
     // 添加县级城市标记的函数
     function addCountyMarker(county) {
         // 创建县级城市标记，使用比主要城市小的图标
@@ -634,23 +502,185 @@ document.addEventListener('DOMContentLoaded', function() {
         });
     }
 
-    // 添加自动刷新定时器（每10分钟更新一次）
-    setInterval(() => {
-        fetch('./api/cities')
-            .then(response => response.json())
-            .then(cities => {
-                cities.forEach(city => fetchCityWeather(city));
-            })
-            .catch(error => console.error('自动刷新天气数据失败:', error));
-            
-        // 刷新县级城市天气数据（如果已加载并显示）
-        if (countiesLoaded && showCounties) {
-            fetch('./api/counties')
-                .then(response => response.json())
-                .then(counties => {
-                    counties.forEach(county => fetchCountyWeather(county));
-                })
-                .catch(error => console.error('自动刷新县级城市天气数据失败:', error));
+    // 根据天气状态获取对应的图标文件名
+    function getLocalIconByWeatherCode(iconCode, weatherDescription) {
+        // 先根据iconCode查找
+        let iconFileName = weatherIconMap[iconCode];
+        
+        // 如果没找到，则根据天气描述判断
+        if (!iconFileName) {
+            if (weatherDescription.includes('晴') || weatherDescription.includes('clear')) {
+                iconFileName = 'sunny.png';
+            } else if (weatherDescription.includes('多云') || weatherDescription.includes('cloud')) {
+                iconFileName = 'douyun.png';
+            } else if (weatherDescription.includes('阴') || weatherDescription.includes('overcast')) {
+                iconFileName = 'yintian.png';
+            } else if (weatherDescription.includes('雷') || weatherDescription.includes('thunder')) {
+                iconFileName = 'leizhenyu.png';
+            } else if (weatherDescription.includes('暴雨') || weatherDescription.includes('heavy rain')) {
+                iconFileName = 'dawu.png';
+            } else if (weatherDescription.includes('大雨') || weatherDescription.includes('rainstorm')) {
+                iconFileName = 'dayu.png';
+            } else if (weatherDescription.includes('中雨') || weatherDescription.includes('moderate rain')) {
+                iconFileName = 'zhongyu.png';
+            } else if (weatherDescription.includes('小雨') || weatherDescription.includes('light rain')) {
+                iconFileName = 'xiaoyu.png';
+            } else if (weatherDescription.includes('雨') || weatherDescription.includes('rain')) {
+                iconFileName = 'xiaoyu.png';
+            } else if (weatherDescription.includes('雪') || weatherDescription.includes('snow')) {
+                iconFileName = 'snow.png';
+            } else {
+                iconFileName = 'sunny.png'; // 默认图标
+            }
         }
-    }, 600000); // 10分钟 = 600000毫秒
+        
+        return `static/weather_icon/${iconFileName}`;
+    }
+    
+    // 自定义图标创建函数
+    function createWeatherIcon(iconCode, weatherDescription = '', isCounty = false) {
+        const iconPath = getLocalIconByWeatherCode(iconCode, weatherDescription);
+        
+        const imgSize = isCounty ? 30 : 40;
+        const className = isCounty ? 'weather-icon-marker county-marker' : 'weather-icon-marker';
+        
+        return L.divIcon({
+            html: `<img src="${iconPath}" style="width:${imgSize}px; height:${imgSize}px;">`,
+            className: className,
+            iconSize: [imgSize, imgSize],
+            iconAnchor: [imgSize/2, imgSize/2]
+        });
+    }
+
+    // 定义天气筛选函数
+    window.filterWeather = function(weatherType) {
+        filterApplied = true;
+        currentWeatherType = weatherType;
+        
+        // 处理主要城市
+        Object.keys(cityWeatherData).forEach(cityName => {
+            const weatherData = cityWeatherData[cityName];
+            const marker = cityMarkers[cityName];
+            
+            if (!marker) return;
+            
+            let shouldShow = false;
+            const weather = weatherData.weather.toLowerCase();
+            
+            switch(weatherType) {
+                case 'sunny':
+                    shouldShow = weather.includes('晴') || weather.includes('clear');
+                    break;
+                case 'cloudy':
+                    shouldShow = weather.includes('多云') || weather.includes('cloud') || weather.includes('阴') || weather.includes('overcast');
+                    break;
+                case 'rain':
+                    shouldShow = weather.includes('雨') || weather.includes('rain');
+                    break;
+                case 'snow':
+                    shouldShow = weather.includes('雪') || weather.includes('snow');
+                    break;
+            }
+            
+            if (shouldShow) {
+                marker.setOpacity(1);
+                // 让匹配的城市图标更大更明显
+                const icon = marker.getIcon();
+                const iconHtml = icon.options.html;
+                const newIcon = L.divIcon({
+                    html: iconHtml.replace('width:40px; height:40px', 'width:50px; height:50px'),
+                    className: 'weather-icon-marker weather-highlight',
+                    iconSize: [50, 50],
+                    iconAnchor: [25, 25]
+                });
+                marker.setIcon(newIcon);
+            } else {
+                // 其他城市变暗
+                marker.setOpacity(0.3);
+            }
+        });
+        
+        // 处理县级城市（如果已加载）
+        if (countiesLoaded && showCounties) {
+            Object.keys(countyWeatherData).forEach(countyName => {
+                const weatherData = countyWeatherData[countyName];
+                const marker = countyMarkers[countyName];
+                
+                if (!marker) return;
+                
+                let shouldShow = false;
+                const weather = weatherData.weather.toLowerCase();
+                
+                switch(weatherType) {
+                    case 'sunny':
+                        shouldShow = weather.includes('晴') || weather.includes('clear');
+                        break;
+                    case 'cloudy':
+                        shouldShow = weather.includes('多云') || weather.includes('cloud') || weather.includes('阴') || weather.includes('overcast');
+                        break;
+                    case 'rain':
+                        shouldShow = weather.includes('雨') || weather.includes('rain');
+                        break;
+                    case 'snow':
+                        shouldShow = weather.includes('雪') || weather.includes('snow');
+                        break;
+                }
+                
+                if (shouldShow) {
+                    marker.setOpacity(1);
+                    // 让匹配的县级城市图标更大更明显，但比主要城市小
+                    const icon = marker.getIcon();
+                    const iconHtml = icon.options.html;
+                    const newIcon = L.divIcon({
+                        html: iconHtml.replace('width:30px; height:30px', 'width:40px; height:40px'),
+                        className: 'weather-icon-marker county-marker weather-highlight',
+                        iconSize: [40, 40],
+                        iconAnchor: [20, 20]
+                    });
+                    marker.setIcon(newIcon);
+                } else {
+                    // 其他县级城市变暗
+                    marker.setOpacity(0.3);
+                }
+            });
+        }
+    };
+    
+    // 定义重置筛选的函数
+    window.resetFilter = function() {
+        filterApplied = false;
+        currentWeatherType = '';
+        
+        // 重置主要城市
+        Object.keys(cityMarkers).forEach(cityName => {
+            const marker = cityMarkers[cityName];
+            if (!marker) return;
+            
+            // 恢复原始不透明度
+            marker.setOpacity(1);
+            
+            // 恢复原始图标大小
+            const weatherData = cityWeatherData[cityName];
+            if (weatherData) {
+                updateMarkerIcon(cityName, weatherData);
+            }
+        });
+        
+        // 重置县级城市（如果已加载）
+        if (countiesLoaded && showCounties) {
+            Object.keys(countyMarkers).forEach(countyName => {
+                const marker = countyMarkers[countyName];
+                if (!marker) return;
+                
+                // 恢复原始不透明度
+                marker.setOpacity(1);
+                
+                // 恢复原始图标大小
+                const weatherData = countyWeatherData[countyName];
+                if (weatherData) {
+                    updateCountyMarkerIcon(countyName, weatherData);
+                }
+            });
+        }
+    };
 }); 
