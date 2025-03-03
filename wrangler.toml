@@ -3,8 +3,4 @@ main = "worker.js"
 compatibility_date = "2023-12-01"
 
 [vars]
-WEATHER_API_KEY = "ea9a346917029fa37840b6d86ed1307c"
-
-[[routes]]
-pattern = "*weather-map.pages.dev/api/*"
-zone_name = "*" 
+WEATHER_API_KEY = "ea9a346917029fa37840b6d86ed1307c" 
