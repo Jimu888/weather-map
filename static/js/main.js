@@ -101,8 +101,8 @@ document.addEventListener('DOMContentLoaded', function() {
         
         selectedDays = diffDays;
         
-        // 刷新所有城市的天气数据
-        fetch('/api/cities')
+        // 使用相对路径
+        fetch('./api/cities')
             .then(response => response.json())
             .then(cities => {
                 cities.forEach(city => fetchCityWeather(city));
@@ -111,7 +111,7 @@ document.addEventListener('DOMContentLoaded', function() {
             
         // 刷新县级城市天气数据（如果已加载）
         if (countiesLoaded) {
-            fetch('/api/counties')
+            fetch('./api/counties')
                 .then(response => response.json())
                 .then(counties => {
                     counties.forEach(county => fetchCountyWeather(county));
@@ -284,7 +284,7 @@ document.addEventListener('DOMContentLoaded', function() {
             }
         }
         
-        return `/weather_icon/${iconFileName}`;
+        return `static/weather_icon/${iconFileName}`;
     }
     
     // 自定义图标创建函数
@@ -303,7 +303,7 @@ document.addEventListener('DOMContentLoaded', function() {
     }
 
     // 获取所有城市数据
-    fetch('/api/cities')
+    fetch('./api/cities')
         .then(response => response.json())
         .then(cities => {
             cities.forEach(city => {
@@ -347,7 +347,7 @@ document.addEventListener('DOMContentLoaded', function() {
             ? `lat=${city.lat}&lon=${city.lon}` 
             : `lat=${city.lat}&lon=${city.lon}&days=${selectedDays}`;
             
-        fetch(`/api/${apiEndpoint}?${apiParams}`)
+        fetch(`./api/${apiEndpoint}?${apiParams}`)
             .then(response => response.json())
             .then(data => {
                 // 存储天气数据用于筛选
@@ -448,7 +448,7 @@ document.addEventListener('DOMContentLoaded', function() {
     
     // 加载县级城市数据
     function loadCountyCities() {
-        fetch('/api/counties')
+        fetch('./api/counties')
             .then(response => response.json())
             .then(counties => {
                 counties.forEach(county => {
@@ -494,7 +494,7 @@ document.addEventListener('DOMContentLoaded', function() {
             ? `lat=${county.lat}&lon=${county.lon}` 
             : `lat=${county.lat}&lon=${county.lon}&days=${selectedDays}`;
             
-        fetch(`/api/${apiEndpoint}?${apiParams}`)
+        fetch(`./api/${apiEndpoint}?${apiParams}`)
             .then(response => response.json())
             .then(data => {
                 // 存储天气数据用于筛选
@@ -563,7 +563,7 @@ document.addEventListener('DOMContentLoaded', function() {
 
     // 添加自动刷新定时器（每10分钟更新一次）
     setInterval(() => {
-        fetch('/api/cities')
+        fetch('./api/cities')
             .then(response => response.json())
             .then(cities => {
                 cities.forEach(city => fetchCityWeather(city));
@@ -572,7 +572,7 @@ document.addEventListener('DOMContentLoaded', function() {
             
         // 刷新县级城市天气数据（如果已加载并显示）
         if (countiesLoaded && showCounties) {
-            fetch('/api/counties')
+            fetch('./api/counties')
                 .then(response => response.json())
                 .then(counties => {
                     counties.forEach(county => fetchCountyWeather(county));
