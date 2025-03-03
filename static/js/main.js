@@ -1,11 +1,7 @@
 // 获取访问计数
 function fetchVisitorCount() {
-    fetch('./api/visitor-count')
-        .then(response => response.json())
-        .then(data => {
-            document.getElementById('visitorCount').textContent = data.count;
-        })
-        .catch(error => console.error('获取访问计数失败:', error));
+    // 由于没有后端，暂时移除访问计数功能
+    document.getElementById('visitorCount').textContent = '-';
 }
 
 // 地图和天气功能的主要脚本
@@ -314,6 +310,9 @@ document.addEventListener('DOMContentLoaded', function() {
         });
     }
 
+    // OpenWeatherMap API Key
+    const WEATHER_API_KEY = process.env.WEATHER_API_KEY;
+
     // 获取所有城市数据
     fetch('./api/cities')
         .then(response => response.json())
@@ -354,19 +353,50 @@ document.addEventListener('DOMContentLoaded', function() {
     // 获取城市天气信息
     function fetchCityWeather(city, showDetails = false) {
         // 根据选择的天数决定使用哪个API
-        const apiEndpoint = selectedDays === 0 ? 'weather' : 'forecast';
-        const apiParams = selectedDays === 0 
-            ? `lat=${city.lat}&lon=${city.lon}` 
-            : `lat=${city.lat}&lon=${city.lon}&days=${selectedDays}`;
+        const apiEndpoint = selectedDays === 0 ? 
+            `https://api.openweathermap.org/data/2.5/weather?lat=${city.lat}&lon=${city.lon}&appid=${WEATHER_API_KEY}&units=metric&lang=zh_cn` :
+            `https://api.openweathermap.org/data/2.5/forecast?lat=${city.lat}&lon=${city.lon}&appid=${WEATHER_API_KEY}&units=metric&lang=zh_cn`;
             
-        fetch(`./api/${apiEndpoint}?${apiParams}`)
+        fetch(apiEndpoint)
             .then(response => response.json())
             .then(data => {
+                let weatherData;
+                if (selectedDays === 0) {
+                    // 当前天气
+                    weatherData = {
+                        city: city.name,
+                        temperature: data.main.temp,
+                        weather: data.weather[0].description,
+                        icon: data.weather[0].icon
+                    };
+                } else {
+                    // 预报天气
+                    const targetDate = new Date();
+                    targetDate.setDate(targetDate.getDate() + selectedDays);
+                    const targetDateStr = targetDate.toISOString().split('T')[0];
+                    
+                    // 查找目标日期的天气
+                    const forecast = data.list.find(item => {
+                        const itemDate = new Date(item.dt * 1000).toISOString().split('T')[0];
+                        return itemDate === targetDateStr;
+                    });
+                    
+                    if (forecast) {
+                        weatherData = {
+                            city: city.name,
+                            date: targetDateStr,
+                            temperature: forecast.main.temp,
+                            weather: forecast.weather[0].description,
+                            icon: forecast.weather[0].icon
+                        };
+                    }
+                }
+                
                 // 存储天气数据用于筛选
-                cityWeatherData[city.name] = data;
+                cityWeatherData[city.name] = weatherData;
                 
                 // 更新标记图标
-                updateMarkerIcon(city.name, data);
+                updateMarkerIcon(city.name, weatherData);
                 
                 // 显示详细信息（如果请求）
                 if (showDetails) {
@@ -501,19 +531,50 @@ document.addEventListener('DOMContentLoaded', function() {
     // 获取县级城市天气信息
     function fetchCountyWeather(county, showDetails = false) {
         // 根据选择的天数决定使用哪个API
-        const apiEndpoint = selectedDays === 0 ? 'weather' : 'forecast';
-        const apiParams = selectedDays === 0 
-            ? `lat=${county.lat}&lon=${county.lon}` 
-            : `lat=${county.lat}&lon=${county.lon}&days=${selectedDays}`;
+        const apiEndpoint = selectedDays === 0 ? 
+            `https://api.openweathermap.org/data/2.5/weather?lat=${county.lat}&lon=${county.lon}&appid=${WEATHER_API_KEY}&units=metric&lang=zh_cn` :
+            `https://api.openweathermap.org/data/2.5/forecast?lat=${county.lat}&lon=${county.lon}&appid=${WEATHER_API_KEY}&units=metric&lang=zh_cn`;
             
-        fetch(`./api/${apiEndpoint}?${apiParams}`)
+        fetch(apiEndpoint)
             .then(response => response.json())
             .then(data => {
+                let weatherData;
+                if (selectedDays === 0) {
+                    // 当前天气
+                    weatherData = {
+                        city: county.name,
+                        temperature: data.main.temp,
+                        weather: data.weather[0].description,
+                        icon: data.weather[0].icon
+                    };
+                } else {
+                    // 预报天气
+                    const targetDate = new Date();
+                    targetDate.setDate(targetDate.getDate() + selectedDays);
+                    const targetDateStr = targetDate.toISOString().split('T')[0];
+                    
+                    // 查找目标日期的天气
+                    const forecast = data.list.find(item => {
+                        const itemDate = new Date(item.dt * 1000).toISOString().split('T')[0];
+                        return itemDate === targetDateStr;
+                    });
+                    
+                    if (forecast) {
+                        weatherData = {
+                            city: county.name,
+                            date: targetDateStr,
+                            temperature: forecast.main.temp,
+                            weather: forecast.weather[0].description,
+                            icon: forecast.weather[0].icon
+                        };
+                    }
+                }
+                
                 // 存储天气数据用于筛选
-                countyWeatherData[county.name] = data;
+                countyWeatherData[county.name] = weatherData;
                 
                 // 更新标记图标
-                updateCountyMarkerIcon(county.name, data);
+                updateCountyMarkerIcon(county.name, weatherData);
                 
                 // 显示详细信息（如果请求）
                 if (showDetails) {
