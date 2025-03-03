@@ -1,0 +1,12 @@
+name = "weather-map"
+type = "webpack"
+account_id = "" # 您需要填写您的 Cloudflare 账户 ID
+workers_dev = true
+
+[site]
+bucket = "./templates"
+entry-point = "workers-site"
+
+[env.production]
+name = "weather-map-prod"
+route = "weather-map.pages.dev/*" 
