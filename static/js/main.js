@@ -161,7 +161,7 @@ document.addEventListener('DOMContentLoaded', function() {
     ];
 
     // OpenWeatherMap API Key
-    const WEATHER_API_KEY = '4c6c6c0d0c3c3c3c3c3c3c3c3c3c3c3c'; // 请替换为您的 API Key
+    const WEATHER_API_KEY = '1d4f4e955d14ad7c3a01b6c9f1aa96f4'; // 请替换为您的 API Key
 
     // 获取所有城市数据
     cities.forEach(city => {
