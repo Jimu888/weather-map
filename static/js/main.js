@@ -160,8 +160,6 @@ document.addEventListener('DOMContentLoaded', function() {
         {'name': '桂林', 'lat': 25.2736, 'lon': 110.2907}
     ];
 
-    // OpenWeatherMap API Key
-    const WEATHER_API_KEY = '4c6c6c0d0c3c3c3c3c3c3c3c3c3c3c3c'; // 请替换为您的 API Key
 
     // 获取所有城市数据
     cities.forEach(city => {
@@ -235,64 +233,102 @@ document.addEventListener('DOMContentLoaded', function() {
     function fetchCityWeather(city, showDetails = false) {
         // 根据选择的天数决定使用哪个API
         const apiEndpoint = selectedDays === 0 ? 
-            `https://api.openweathermap.org/data/2.5/weather?lat=${city.lat}&lon=${city.lon}&appid=${WEATHER_API_KEY}&units=metric&lang=zh_cn` :
-            `https://api.openweathermap.org/data/2.5/forecast?lat=${city.lat}&lon=${city.lon}&appid=${WEATHER_API_KEY}&units=metric&lang=zh_cn`;
+            `/api/weather?lat=${city.lat}&lon=${city.lon}` :
+            `/api/forecast?lat=${city.lat}&lon=${city.lon}&days=${selectedDays}`;
             
         fetch(apiEndpoint)
-            .then(response => response.json())
+            .then(response => {
+                if (!response.ok) {
+                    throw new Error(`HTTP error! status: ${response.status}`);
+                }
+                return response.json();
+            })
             .then(data => {
                 let weatherData;
-                if (selectedDays === 0) {
-                    // 当前天气
-                    weatherData = {
-                        city: city.name,
-                        temperature: data.main.temp,
-                        weather: data.weather[0].description,
-                        icon: data.weather[0].icon
-                    };
-                } else {
-                    // 预报天气
-                    const targetDate = new Date();
-                    targetDate.setDate(targetDate.getDate() + selectedDays);
-                    const targetDateStr = targetDate.toISOString().split('T')[0];
-                    
-                    // 查找目标日期的天气
-                    const forecast = data.list.find(item => {
-                        const itemDate = new Date(item.dt * 1000).toISOString().split('T')[0];
-                        return itemDate === targetDateStr;
-                    });
-                    
-                    if (forecast) {
+                try {
+                    if (selectedDays === 0) {
+                        // 当前天气
+                        if (!data.main || !data.weather || !data.weather[0]) {
+                            throw new Error('Invalid weather data format');
+                        }
                         weatherData = {
                             city: city.name,
-                            date: targetDateStr,
-                            temperature: forecast.main.temp,
-                            weather: forecast.weather[0].description,
-                            icon: forecast.weather[0].icon
+                            temperature: Math.round(data.main.temp), // 四舍五入温度
+                            weather: data.weather[0].description,
+                            icon: data.weather[0].icon
                         };
+                    } else {
+                        // 预报天气
+                        const targetDate = new Date();
+                        targetDate.setDate(targetDate.getDate() + selectedDays);
+                        const targetDateStr = targetDate.toISOString().split('T')[0];
+                        
+                        if (!data.list || !Array.isArray(data.list)) {
+                            throw new Error('Invalid forecast data format');
+                        }
+                        
+                        // 查找目标日期的天气
+                        const forecast = data.list.find(item => {
+                            const itemDate = new Date(item.dt * 1000).toISOString().split('T')[0];
+                            return itemDate === targetDateStr;
+                        });
+                        
+                        if (forecast && forecast.main && forecast.weather && forecast.weather[0]) {
+                            weatherData = {
+                                city: city.name,
+                                date: targetDateStr,
+                                temperature: Math.round(forecast.main.temp),
+                                weather: forecast.weather[0].description,
+                                icon: forecast.weather[0].icon
+                            };
+                        } else {
+                            throw new Error('No forecast data available for the selected date');
+                        }
                     }
-                }
-                
-                // 存储天气数据用于筛选
-                cityWeatherData[city.name] = weatherData;
-                
-                // 更新标记图标
-                updateMarkerIcon(city.name, weatherData);
-                
-                // 显示详细信息（如果请求）
-                if (showDetails) {
-                    const marker = cityMarkers[city.name];
-                    if (marker) {
-                        marker.openPopup();
+                    
+                    // 存储天气数据用于筛选
+                    cityWeatherData[city.name] = weatherData;
+                    
+                    // 更新标记图标
+                    updateMarkerIcon(city.name, weatherData);
+                    
+                    // 显示详细信息（如果请求）
+                    if (showDetails) {
+                        const marker = cityMarkers[city.name];
+                        if (marker) {
+                            marker.openPopup();
+                        }
                     }
-                }
-                
-                // 如果有筛选已应用，则重新应用当前的筛选类型
-                if (filterApplied && currentWeatherType) {
-                    window.filterWeather(currentWeatherType);
+                    
+                    // 如果有筛选已应用，则重新应用当前的筛选类型
+                    if (filterApplied && currentWeatherType) {
+                        window.filterWeather(currentWeatherType);
+                    }
+                } catch (error) {
+                    console.error(`处理${city.name}的天气数据时出错:`, error);
+                    // 使用默认数据
+                    weatherData = {
+                        city: city.name,
+                        temperature: '--',
+                        weather: '数据获取失败',
+                        icon: 'default'
+                    };
+                    cityWeatherData[city.name] = weatherData;
+                    updateMarkerIcon(city.name, weatherData);
                 }
             })
-            .catch(error => console.error(`获取${city.name}的天气失败:`, error));
+            .catch(error => {
+                console.error(`获取${city.name}的天气失败:`, error);
+                // 使用默认数据
+                const weatherData = {
+                    city: city.name,
+                    temperature: '--',
+                    weather: '数据获取失败',
+                    icon: 'default'
+                };
+                cityWeatherData[city.name] = weatherData;
+                updateMarkerIcon(city.name, weatherData);
+            });
     }
 
     // 更新标记图标和弹出框
@@ -400,8 +436,8 @@ document.addEventListener('DOMContentLoaded', function() {
     function fetchCountyWeather(county, showDetails = false) {
         // 根据选择的天数决定使用哪个API
         const apiEndpoint = selectedDays === 0 ? 
-            `https://api.openweathermap.org/data/2.5/weather?lat=${county.lat}&lon=${county.lon}&appid=${WEATHER_API_KEY}&units=metric&lang=zh_cn` :
-            `https://api.openweathermap.org/data/2.5/forecast?lat=${county.lat}&lon=${county.lon}&appid=${WEATHER_API_KEY}&units=metric&lang=zh_cn`;
+            `/api/weather?lat=${county.lat}&lon=${county.lon}` :
+            `/api/forecast?lat=${county.lat}&lon=${county.lon}&days=${selectedDays}`;
             
         fetch(apiEndpoint)
             .then(response => response.json())
