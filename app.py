@@ -418,5 +418,24 @@ def get_counties():
         return jsonify(filtered_counties)
     return jsonify(counties)
 
+@app.route('/api/visitor-count')
+def get_visitor_count():
+    """获取访问计数的API端点"""
+    # 获取访问者IP
+    visitor_ip = request.remote_addr
+    
+    # 加载访问记录
+    visitors = load_visitors()
+    
+    # 添加新的访问记录
+    if visitor_ip not in visitors['ips']:
+        visitors['ips'].append(visitor_ip)
+        save_visitors(visitors)
+    
+    # 获取唯一访问者数量
+    visitor_count = count_unique_visitors()
+    
+    return jsonify({'count': visitor_count})
+
 if __name__ == '__main__':
     app.run(debug=True, port=8080)

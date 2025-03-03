@@ -1,5 +1,17 @@
+// 获取访问计数
+function fetchVisitorCount() {
+    fetch('./api/visitor-count')
+        .then(response => response.json())
+        .then(data => {
+            document.getElementById('visitorCount').textContent = data.count;
+        })
+        .catch(error => console.error('获取访问计数失败:', error));
+}
+
 // 地图和天气功能的主要脚本
 document.addEventListener('DOMContentLoaded', function() {
+    fetchVisitorCount();
+    
     // 初始化地图，添加平滑缩放效果
     const map = L.map('weather-map', {
         center: [35.86166, 104.195397],
