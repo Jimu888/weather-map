@@ -460,4 +460,67 @@ footer {
         width: 100%;
         max-width: 200px;
     }
+}
+
+/* 修复地图背景和归属信息样式 */
+.leaflet-control-attribution {
+    font-size: 10px !important;
+    background-color: rgba(255, 255, 255, 0.7) !important;
+    padding: 2px 5px !important;
+    border-radius: 3px !important;
+}
+
+/* 确保地图容器内所有元素正确显示 */
+#weather-map .leaflet-control-container img {
+    max-width: none !important;
+}
+
+/* 修复地图右下角可能的图像溢出问题 */
+.leaflet-pane,
+.leaflet-tile,
+.leaflet-marker-icon,
+.leaflet-marker-shadow,
+.leaflet-tile-container,
+.leaflet-pane > svg,
+.leaflet-pane > canvas,
+.leaflet-zoom-box,
+.leaflet-image-layer,
+.leaflet-layer {
+    position: absolute;
+    left: 0;
+    top: 0;
+    z-index: auto;
+}
+
+.leaflet-layer {
+    position: absolute;
+    left: 0;
+    top: 0;
+    z-index: auto;
+}
+
+/* 修复地图底部的背景溢出问题 */
+.leaflet-container {
+    background: #fff !important;
+    outline: 0;
+    overflow: hidden;
+}
+
+/* 修复右下角可能的装饰图片 */
+.leaflet-container::after {
+    display: none !important;
+}
+
+/* 确保所有图片元素都有正确的样式 */
+.leaflet-container img {
+    max-width: none !important;
+    max-height: none !important;
+}
+
+/* 移除右下角可能的背景装饰 */
+#weather-map::after,
+.leaflet-container::after,
+.leaflet-pane::after {
+    content: none !important;
+    display: none !important;
 } 
