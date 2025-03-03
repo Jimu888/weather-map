@@ -231,10 +231,11 @@ document.addEventListener('DOMContentLoaded', function() {
 
     // 获取城市天气信息
     function fetchCityWeather(city, showDetails = false) {
+        const host = window.location.origin; // 获取当前网站的主机名
         // 根据选择的天数决定使用哪个API
         const apiEndpoint = selectedDays === 0 ? 
-            `/api/weather?lat=${city.lat}&lon=${city.lon}` :
-            `/api/forecast?lat=${city.lat}&lon=${city.lon}&days=${selectedDays}`;
+            `${host}/api/weather?lat=${city.lat}&lon=${city.lon}` :
+            `${host}/api/forecast?lat=${city.lat}&lon=${city.lon}&days=${selectedDays}`;
             
         fetch(apiEndpoint)
             .then(response => {
@@ -434,10 +435,11 @@ document.addEventListener('DOMContentLoaded', function() {
     
     // 获取县级城市天气信息
     function fetchCountyWeather(county, showDetails = false) {
+        const host = window.location.origin; // 获取当前网站的主机名
         // 根据选择的天数决定使用哪个API
         const apiEndpoint = selectedDays === 0 ? 
-            `/api/weather?lat=${county.lat}&lon=${county.lon}` :
-            `/api/forecast?lat=${county.lat}&lon=${county.lon}&days=${selectedDays}`;
+            `${host}/api/weather?lat=${county.lat}&lon=${county.lon}` :
+            `${host}/api/forecast?lat=${county.lat}&lon=${county.lon}&days=${selectedDays}`;
             
         fetch(apiEndpoint)
             .then(response => response.json())
