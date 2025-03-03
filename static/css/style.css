@@ -1,0 +1,463 @@
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+body {
+    font-family: "Helvetica Neue", Arial, sans-serif;
+    line-height: 1.6;
+    color: #333;
+    background-color: #f5f7fa;
+    display: flex;
+    flex-direction: column;
+    min-height: 100vh;
+}
+
+header {
+    background-color: #3498db;
+    color: white;
+    text-align: center;
+    padding: 1rem 0;
+    box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+}
+
+header h1 {
+    font-size: 2rem;
+    margin-bottom: 0.3rem;
+}
+
+.visitor-count {
+    font-size: 1.1rem;
+    color: rgba(255, 255, 255, 0.9);
+    margin-top: 0.5rem;
+    text-shadow: 0 1px 2px rgba(0, 0, 0, 0.2);
+}
+
+/* 日期选择器样式 */
+.date-selector-container {
+    background-color: #e8f4fc;
+    padding: 8px 0;
+    text-align: center;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+}
+
+.date-selector {
+    display: inline-flex;
+    align-items: center;
+    gap: 10px;
+    margin-bottom: 8px;
+}
+
+.date-selector label {
+    font-weight: bold;
+    color: #2c3e50;
+}
+
+.date-selector select {
+    padding: 6px 10px;
+    border: 1px solid #3498db;
+    border-radius: 4px;
+    background-color: white;
+    font-size: 15px;
+    cursor: pointer;
+    transition: border-color 0.2s, box-shadow 0.2s;
+}
+
+.date-selector select:hover {
+    border-color: #2980b9;
+}
+
+.date-selector select:focus {
+    outline: none;
+    border-color: #2980b9;
+    box-shadow: 0 0 0 3px rgba(52, 152, 219, 0.25);
+}
+
+#selected-date {
+    font-weight: bold;
+    color: #2c3e50;
+}
+
+.container {
+    flex: 1;
+    padding: 0.5rem;
+    display: flex;
+    flex-direction: column;
+}
+
+#weather-map {
+    flex: 1;
+    width: 100%;
+    min-height: 650px;
+    border-radius: 8px;
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+}
+
+.weather-info {
+    flex: 1;
+    min-width: 250px;
+    background-color: white;
+    padding: 1.5rem;
+    border-radius: 8px;
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+}
+
+.weather-info h2 {
+    font-size: 1.5rem;
+    margin-bottom: 1.5rem;
+    color: #3498db;
+    text-align: center;
+}
+
+.weather-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 1rem;
+    padding-bottom: 0.5rem;
+    border-bottom: 1px solid #eee;
+}
+
+.weather-header h3 {
+    font-size: 1.8rem;
+    color: #2c3e50;
+}
+
+#weather-icon {
+    width: 64px;
+    height: 64px;
+}
+
+.weather-details {
+    font-size: 1.2rem;
+}
+
+.weather-details p {
+    margin-bottom: 0.8rem;
+}
+
+.hidden {
+    display: none;
+}
+
+footer {
+    text-align: center;
+    padding: 1rem 0;
+    background-color: #2c3e50;
+    color: white;
+    margin-top: 0.5rem;
+}
+
+/* 不同天气条件的标记样式 */
+.marker-sunny {
+    background-color: #f1c40f;
+    border: 2px solid #f39c12;
+}
+
+.marker-cloudy {
+    background-color: #bdc3c7;
+    border: 2px solid #95a5a6;
+}
+
+.marker-rainy {
+    background-color: #3498db;
+    border: 2px solid #2980b9;
+}
+
+.marker-cold {
+    background-color: #3498db;
+    border: 2px solid #2980b9;
+}
+
+.marker-hot {
+    background-color: #e74c3c;
+    border: 2px solid #c0392b;
+}
+
+/* 天气图标标记样式 */
+.weather-icon-marker {
+    background: none !important;
+    border: none !important;
+}
+
+.weather-icon-marker img {
+    filter: drop-shadow(0 0 2px #fff) drop-shadow(0 0 2px rgba(0,0,0,0.3));
+    transition: transform 0.2s ease;
+}
+
+.weather-icon-marker img:hover {
+    transform: scale(1.2);
+}
+
+/* 晴天城市高亮样式 */
+.sunny-highlight img {
+    filter: drop-shadow(0 0 5px gold) drop-shadow(0 0 10px rgba(255, 215, 0, 0.7));
+    animation: pulse 1.5s infinite;
+}
+
+@keyframes pulse {
+    0% { transform: scale(1); }
+    50% { transform: scale(1.1); }
+    100% { transform: scale(1); }
+}
+
+/* 城市标签样式 */
+.city-label {
+    background-color: rgba(255, 255, 255, 0.7);
+    border: 1px solid rgba(0, 0, 0, 0.2);
+    border-radius: 4px;
+    padding: 2px 5px;
+    font-weight: bold;
+    font-size: 10px;
+    white-space: nowrap;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+}
+
+/* 重新设计弹出窗口样式 */
+.leaflet-popup-content {
+    font-size: 1.1rem;
+    line-height: 1.5;
+}
+
+.leaflet-popup-content-wrapper {
+    border-radius: 8px;
+    padding: 5px;
+}
+
+.leaflet-popup-content h3 {
+    color: #2c3e50;
+    border-bottom: 1px solid #eee;
+    padding-bottom: 5px;
+    margin-bottom: 8px;
+    text-align: center;
+}
+
+.weather-popup-content {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+}
+
+.weather-popup-icon {
+    width: 60px;
+    height: 60px;
+    margin-bottom: 8px;
+}
+
+/* 筛选按钮样式 */
+.filter-buttons {
+    display: flex;
+    justify-content: center;
+    gap: 10px;
+    margin-top: 8px;
+}
+
+.filter-btn {
+    background-color: #3498db;
+    color: white;
+    border: none;
+    border-radius: 4px;
+    padding: 6px 12px;
+    font-size: 15px;
+    cursor: pointer;
+    transition: background-color 0.3s, transform 0.2s;
+}
+
+.filter-btn:hover {
+    background-color: #2980b9;
+    transform: translateY(-2px);
+}
+
+.filter-btn:active {
+    transform: translateY(0);
+}
+
+#sunny-filter {
+    background-color: #f39c12;
+}
+
+#sunny-filter:hover {
+    background-color: #e67e22;
+}
+
+#reset-filter {
+    background-color: #7f8c8d;
+}
+
+#reset-filter:hover {
+    background-color: #95a5a6;
+}
+
+.county-btn {
+    background-color: #8e44ad;
+}
+
+.county-btn:hover {
+    background-color: #9b59b6;
+}
+
+.county-btn.active {
+    background-color: #6c3483;
+    box-shadow: 0 0 8px rgba(142, 68, 173, 0.7);
+}
+
+/* 县级城市标记样式 */
+.county-marker img {
+    width: 30px !important;
+    height: 30px !important;
+    opacity: 0.85;
+}
+
+.county-city-label {
+    background-color: rgba(255, 255, 255, 0.7);
+    border: 1px solid rgba(142, 68, 173, 0.5);
+    border-radius: 4px;
+    padding: 1px 3px;
+    font-weight: normal;
+    font-size: 8px;
+    white-space: nowrap;
+    box-shadow: 0 1px 2px rgba(0,0,0,0.1);
+}
+
+/* 媒体查询以支持移动设备 */
+@media (max-width: 768px) {
+    #weather-map {
+        min-height: 450px;
+    }
+    
+    header h1 {
+        font-size: 1.6rem;
+    }
+    
+    .date-selector {
+        flex-direction: column;
+        gap: 5px;
+    }
+    
+    .filter-buttons {
+        flex-direction: column;
+        align-items: center;
+    }
+}
+
+.control-panel {
+    background-color: rgba(255, 255, 255, 0.9);
+    padding: 15px;
+    border-radius: 8px;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+    margin: 10px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 15px;
+}
+
+.date-selector {
+    text-align: center;
+    margin-bottom: 10px;
+}
+
+.date-selector input[type="date"] {
+    padding: 8px 12px;
+    border-radius: 4px;
+    border: 1px solid #ccc;
+    font-size: 16px;
+    color: #333;
+    background-color: white;
+    cursor: pointer;
+    transition: all 0.3s ease;
+}
+
+.date-selector input[type="date"]:hover {
+    border-color: #3498db;
+}
+
+.date-selector input[type="date"]:focus {
+    outline: none;
+    border-color: #3498db;
+    box-shadow: 0 0 5px rgba(52, 152, 219, 0.5);
+}
+
+.filter-buttons {
+    display: flex;
+    gap: 10px;
+    flex-wrap: wrap;
+    justify-content: center;
+    max-width: 800px;
+}
+
+.filter-btn, .reset-btn, #toggle-counties {
+    padding: 8px 15px;
+    border: none;
+    border-radius: 4px;
+    cursor: pointer;
+    font-size: 14px;
+    transition: all 0.3s ease;
+    min-width: 120px;
+}
+
+.filter-btn:hover, .reset-btn:hover, #toggle-counties:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+}
+
+/* 不同天气类型按钮的样式 */
+.filter-btn:nth-child(1) {
+    background-color: #FFD700;
+    color: #333;
+}
+
+.filter-btn:nth-child(2) {
+    background-color: #87CEEB;
+    color: #333;
+}
+
+.filter-btn:nth-child(3) {
+    background-color: #4682B4;
+    color: white;
+}
+
+.filter-btn:nth-child(4) {
+    background-color: #B0E0E6;
+    color: #333;
+}
+
+.reset-btn {
+    background-color: #6c757d;
+    color: white;
+}
+
+.reset-btn:hover {
+    background-color: #5a6268;
+}
+
+#toggle-counties {
+    background-color: #28a745;
+    color: white;
+}
+
+#toggle-counties:hover {
+    background-color: #218838;
+}
+
+#toggle-counties.active {
+    background-color: #dc3545;
+}
+
+.weather-highlight {
+    filter: brightness(1.2);
+}
+
+@media (max-width: 768px) {
+    .filter-buttons {
+        flex-direction: column;
+        align-items: center;
+        gap: 8px;
+    }
+
+    .filter-btn, .reset-btn, #toggle-counties {
+        width: 100%;
+        max-width: 200px;
+    }
+} 

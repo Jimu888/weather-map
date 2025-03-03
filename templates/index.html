@@ -1,0 +1,43 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>几木正在寻找阳光……</title>
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.7.1/dist/leaflet.css" />
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+</head>
+<body>
+    <header>
+        <h1>几木正在寻找阳光……</h1>
+        <p>规划您的旅行，找到晴天的城市</p>
+        <p class="visitor-count">您是第 {{ visitor_count }} 位来寻找阳光的朋友</p>
+    </header>
+    
+    <div class="control-panel">
+        <div class="date-selector">
+            <input type="date" id="date-picker" onchange="changeForecastDate(this.value)" style="cursor: pointer;">
+        </div>
+        <div class="filter-buttons">
+            <button onclick="filterWeather('sunny')" class="filter-btn">显示晴天城市</button>
+            <button onclick="filterWeather('cloudy')" class="filter-btn">显示多云城市</button>
+            <button onclick="filterWeather('rain')" class="filter-btn">显示下雨城市</button>
+            <button onclick="filterWeather('snow')" class="filter-btn">显示下雪城市</button>
+            <button onclick="resetFilter()" class="reset-btn">重置筛选</button>
+            <button id="toggle-counties" onclick="toggleCounties()">显示县级城市</button>
+        </div>
+    </div>
+    
+    <div class="container">
+        <div id="weather-map"></div>
+    </div>
+
+    <footer>
+        <p>数据来源: OpenWeatherMap</p>
+    </footer>
+
+    <!-- 加载JS库和脚本 -->
+    <script src="https://unpkg.com/leaflet@1.7.1/dist/leaflet.js"></script>
+    <script src="{{ url_for('static', filename='js/main.js') }}"></script>
+</body>
+</html> 
