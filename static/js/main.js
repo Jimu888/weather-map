@@ -16,7 +16,9 @@ document.addEventListener('DOMContentLoaded', function() {
         zoomSnap: 0.1,  // 允许更精细的缩放级别
         zoomDelta: 0.5, // 每次缩放的步长更小
         wheelDebounceTime: 100, // 减少鼠标滚轮缩放的抖动
-        wheelPxPerZoomLevel: 60 // 需要更多的滚动来完成一个缩放级别
+        wheelPxPerZoomLevel: 60, // 需要更多的滚动来完成一个缩放级别
+        preferCanvas: false, // 禁用Canvas，使用SVG渲染
+        renderer: L.svg() // 强制使用SVG渲染器
     });
 
     // 添加更美观的地图图层
@@ -31,6 +33,22 @@ document.addEventListener('DOMContentLoaded', function() {
     map.attributionControl.setPrefix('');
     document.querySelector('.leaflet-control-attribution').style.fontSize = '10px';
     document.querySelector('.leaflet-control-attribution').style.background = 'rgba(255, 255, 255, 0.7)';
+    
+    // 删除任何可能存在的覆盖层
+    try {
+        // 确保移除地图上的所有polygon
+        const mapContainer = document.getElementById('weather-map');
+        const polygons = mapContainer.querySelectorAll('path.leaflet-interactive');
+        polygons.forEach(polygon => polygon.remove());
+        
+        // 确保overlay pane是空的
+        const overlayPane = document.querySelector('.leaflet-overlay-pane');
+        if (overlayPane) {
+            overlayPane.innerHTML = '';
+        }
+    } catch (e) {
+        console.error('清理覆盖层时出错:', e);
+    }
     
     // 城市和天气标记的存储
     const cityMarkers = {};
@@ -608,6 +626,534 @@ document.addEventListener('DOMContentLoaded', function() {
         counties.push(county);
     });
 
+    // 直辖市县级城市 - 北京市
+    const beijingCounties = [
+        {'name': '昌平', 'lat': 40.2207, 'lon': 116.2312},
+        {'name': '顺义', 'lat': 40.1302, 'lon': 116.6547},
+        {'name': '通州', 'lat': 39.9098, 'lon': 116.6567},
+        {'name': '大兴', 'lat': 39.7267, 'lon': 116.3413},
+        {'name': '房山', 'lat': 39.7479, 'lon': 116.1435},
+        {'name': '门头沟', 'lat': 39.9404, 'lon': 116.1014},
+        {'name': '海淀', 'lat': 39.9627, 'lon': 116.3176},
+        {'name': '朝阳', 'lat': 39.9219, 'lon': 116.4434},
+        {'name': '丰台', 'lat': 39.8589, 'lon': 116.2867},
+        {'name': '石景山', 'lat': 39.9068, 'lon': 116.2235},
+        {'name': '密云', 'lat': 40.3763, 'lon': 116.8433},
+        {'name': '延庆', 'lat': 40.4547, 'lon': 115.9748},
+        {'name': '怀柔', 'lat': 40.3164, 'lon': 116.6316},
+        {'name': '平谷', 'lat': 40.1406, 'lon': 117.1214}
+    ];
+    
+    // 将北京市县级城市添加到counties列表中
+    beijingCounties.forEach(county => {
+        counties.push(county);
+    });
+    
+    // 直辖市县级城市 - 天津市
+    const tianjinCounties = [
+        {'name': '武清', 'lat': 39.3841, 'lon': 117.0448},
+        {'name': '宝坻', 'lat': 39.7179, 'lon': 117.3096},
+        {'name': '静海', 'lat': 38.9476, 'lon': 116.9741},
+        {'name': '宁河', 'lat': 39.3303, 'lon': 117.8243},
+        {'name': '蓟州', 'lat': 40.0456, 'lon': 117.4076},
+        {'name': '滨海新区', 'lat': 39.0018, 'lon': 117.7119},
+        {'name': '津南', 'lat': 38.9357, 'lon': 117.3572},
+        {'name': '北辰', 'lat': 39.2241, 'lon': 117.1380},
+        {'name': '西青', 'lat': 39.1413, 'lon': 117.0089},
+        {'name': '东丽', 'lat': 39.0863, 'lon': 117.3145}
+    ];
+    
+    // 将天津市县级城市添加到counties列表中
+    tianjinCounties.forEach(county => {
+        counties.push(county);
+    });
+    
+    // 华北地区县级城市 - 河北省
+    const hebeiCounties = [
+        {'name': '保定', 'lat': 38.8671, 'lon': 115.4845},
+        {'name': '廊坊', 'lat': 39.5376, 'lon': 116.6849},
+        {'name': '沧州', 'lat': 38.3107, 'lon': 116.8452},
+        {'name': '衡水', 'lat': 37.7351, 'lon': 115.6708},
+        {'name': '邢台', 'lat': 37.0682, 'lon': 114.5047},
+        {'name': '邯郸', 'lat': 36.6093, 'lon': 114.4779},
+        {'name': '秦皇岛', 'lat': 39.9354, 'lon': 119.5985},
+        {'name': '唐山', 'lat': 39.6305, 'lon': 118.1742},
+        {'name': '承德', 'lat': 40.9515, 'lon': 117.9624},
+        {'name': '定州', 'lat': 38.5158, 'lon': 114.9901},
+        {'name': '辛集', 'lat': 37.9433, 'lon': 115.2178},
+        {'name': '涿州', 'lat': 39.4852, 'lon': 115.9743},
+        {'name': '迁安', 'lat': 39.9985, 'lon': 118.7008},
+        {'name': '遵化', 'lat': 40.1892, 'lon': 117.9658},
+        {'name': '霸州', 'lat': 39.1257, 'lon': 116.3917},
+        {'name': '黄骅', 'lat': 38.3712, 'lon': 117.3300},
+        {'name': '安国', 'lat': 38.4185, 'lon': 115.3262},
+        {'name': '泊头', 'lat': 38.0836, 'lon': 116.5782},
+        {'name': '任丘', 'lat': 38.7053, 'lon': 116.0998},
+        {'name': '高碑店', 'lat': 39.3265, 'lon': 115.8736}
+    ];
+    
+    // 将河北省县级城市添加到counties列表中
+    hebeiCounties.forEach(county => {
+        counties.push(county);
+    });
+    
+    // 华东地区县级城市 - 山东省
+    const shandongCounties = [
+        {'name': '济宁', 'lat': 35.4151, 'lon': 116.5874},
+        {'name': '泰安', 'lat': 36.1881, 'lon': 117.1324},
+        {'name': '聊城', 'lat': 36.4565, 'lon': 115.9802},
+        {'name': '菏泽', 'lat': 35.2333, 'lon': 115.4812},
+        {'name': '枣庄', 'lat': 34.8556, 'lon': 117.3231},
+        {'name': '德州', 'lat': 37.4356, 'lon': 116.3592},
+        {'name': '滨州', 'lat': 37.3834, 'lon': 117.9721},
+        {'name': '东营', 'lat': 37.4338, 'lon': 118.6741},
+        {'name': '淄博', 'lat': 36.8126, 'lon': 118.0547},
+        {'name': '潍坊', 'lat': 36.7069, 'lon': 119.1619},
+        {'name': '临沂', 'lat': 35.1042, 'lon': 118.3563},
+        {'name': '日照', 'lat': 35.4165, 'lon': 119.5229},
+        {'name': '莱芜', 'lat': 36.2137, 'lon': 117.6668},
+        {'name': '荣成', 'lat': 37.1652, 'lon': 122.4869},
+        {'name': '文登', 'lat': 37.1938, 'lon': 122.0580},
+        {'name': '乳山', 'lat': 36.9200, 'lon': 121.5401},
+        {'name': '肥城', 'lat': 36.1825, 'lon': 116.7689},
+        {'name': '新泰', 'lat': 35.9089, 'lon': 117.7677},
+        {'name': '诸城', 'lat': 36.0153, 'lon': 119.4003},
+        {'name': '寿光', 'lat': 36.8555, 'lon': 118.7906}
+    ];
+    
+    // 将山东省县级城市添加到counties列表中
+    shandongCounties.forEach(county => {
+        counties.push(county);
+    });
+    
+    // 直辖市县级城市 - 上海市
+    const shanghaiCounties = [
+        {'name': '松江', 'lat': 31.0322, 'lon': 121.2276},
+        {'name': '金山', 'lat': 30.7416, 'lon': 121.3420},
+        {'name': '青浦', 'lat': 31.1497, 'lon': 121.1247},
+        {'name': '奉贤', 'lat': 30.9178, 'lon': 121.4741},
+        {'name': '嘉定', 'lat': 31.3813, 'lon': 121.2653},
+        {'name': '宝山', 'lat': 31.4051, 'lon': 121.4891},
+        {'name': '闵行', 'lat': 31.1133, 'lon': 121.3813},
+        {'name': '浦东新区', 'lat': 31.2222, 'lon': 121.5417},
+        {'name': '崇明', 'lat': 31.6229, 'lon': 121.3975},
+        {'name': '徐汇', 'lat': 31.1634, 'lon': 121.4360},
+        {'name': '长宁', 'lat': 31.2200, 'lon': 121.4244},
+        {'name': '静安', 'lat': 31.2293, 'lon': 121.4573},
+        {'name': '普陀', 'lat': 31.2494, 'lon': 121.3952},
+        {'name': '虹口', 'lat': 31.2645, 'lon': 121.5053},
+        {'name': '杨浦', 'lat': 31.2595, 'lon': 121.5263}
+    ];
+    
+    // 将上海市县级城市添加到counties列表中
+    shanghaiCounties.forEach(county => {
+        counties.push(county);
+    });
+    
+    // 华东地区县级城市 - 浙江省
+    const zhejiangCounties = [
+        {'name': '金华', 'lat': 29.0784, 'lon': 119.6478},
+        {'name': '绍兴', 'lat': 29.9972, 'lon': 120.5801},
+        {'name': '嘉兴', 'lat': 30.7539, 'lon': 120.7601},
+        {'name': '丽水', 'lat': 28.4676, 'lon': 119.9229},
+        {'name': '衢州', 'lat': 28.9359, 'lon': 118.8743},
+        {'name': '台州', 'lat': 28.6561, 'lon': 121.4219},
+        {'name': '舟山', 'lat': 30.0164, 'lon': 122.1064},
+        {'name': '湖州', 'lat': 30.8931, 'lon': 120.0868},
+        {'name': '义乌', 'lat': 29.3057, 'lon': 120.0754},
+        {'name': '瑞安', 'lat': 27.7784, 'lon': 120.6526},
+        {'name': '乐清', 'lat': 28.1131, 'lon': 120.9836},
+        {'name': '永康', 'lat': 28.8889, 'lon': 120.0479},
+        {'name': '江山', 'lat': 28.7376, 'lon': 118.6213},
+        {'name': '海宁', 'lat': 30.5294, 'lon': 120.6907},
+        {'name': '诸暨', 'lat': 29.7121, 'lon': 120.2335},
+        {'name': '桐乡', 'lat': 30.6302, 'lon': 120.5650},
+        {'name': '慈溪', 'lat': 30.1701, 'lon': 121.2664},
+        {'name': '余姚', 'lat': 30.0371, 'lon': 121.1543},
+        {'name': '临海', 'lat': 28.8573, 'lon': 121.1444},
+        {'name': '温岭', 'lat': 28.3718, 'lon': 121.3858}
+    ];
+    
+    // 将浙江省县级城市添加到counties列表中
+    zhejiangCounties.forEach(county => {
+        counties.push(county);
+    });
+    
+    // 华东地区县级城市 - 江苏省
+    const jiangsuCounties = [
+        {'name': '镇江', 'lat': 32.1889, 'lon': 119.4262},
+        {'name': '盐城', 'lat': 33.3488, 'lon': 120.1615},
+        {'name': '扬州', 'lat': 32.3943, 'lon': 119.4121},
+        {'name': '泰州', 'lat': 32.4554, 'lon': 119.9229},
+        {'name': '连云港', 'lat': 34.5965, 'lon': 119.2217},
+        {'name': '常州', 'lat': 31.8112, 'lon': 119.9739},
+        {'name': '无锡', 'lat': 31.5689, 'lon': 120.2993},
+        {'name': '徐州', 'lat': 34.2044, 'lon': 117.2857},
+        {'name': '宿迁', 'lat': 33.9634, 'lon': 118.2757},
+        {'name': '淮安', 'lat': 33.5097, 'lon': 119.1132},
+        {'name': '江阴', 'lat': 31.9214, 'lon': 120.2853},
+        {'name': '宜兴', 'lat': 31.3398, 'lon': 119.8232},
+        {'name': '邳州', 'lat': 34.3389, 'lon': 118.0125},
+        {'name': '新沂', 'lat': 34.3694, 'lon': 118.3557},
+        {'name': '金坛', 'lat': 31.7418, 'lon': 119.5975},
+        {'name': '溧阳', 'lat': 31.4156, 'lon': 119.4846},
+        {'name': '常熟', 'lat': 31.6537, 'lon': 120.7522},
+        {'name': '张家港', 'lat': 31.8753, 'lon': 120.5557},
+        {'name': '太仓', 'lat': 31.4577, 'lon': 121.1300},
+        {'name': '昆山', 'lat': 31.3851, 'lon': 120.9809}
+    ];
+    
+    // 将江苏省县级城市添加到counties列表中
+    jiangsuCounties.forEach(county => {
+        counties.push(county);
+    });
+    
+    // 华东地区县级城市 - 安徽省
+    const anhuiCounties = [
+        {'name': '芜湖', 'lat': 31.3340, 'lon': 118.3334},
+        {'name': '蚌埠', 'lat': 32.9158, 'lon': 117.3887},
+        {'name': '马鞍山', 'lat': 31.6702, 'lon': 118.5062},
+        {'name': '淮北', 'lat': 33.9717, 'lon': 116.7947},
+        {'name': '铜陵', 'lat': 30.9454, 'lon': 117.8120},
+        {'name': '安庆', 'lat': 30.5433, 'lon': 117.0633},
+        {'name': '黄山', 'lat': 29.7147, 'lon': 118.3173},
+        {'name': '滁州', 'lat': 32.3033, 'lon': 118.3172},
+        {'name': '阜阳', 'lat': 32.8898, 'lon': 115.8145},
+        {'name': '宿州', 'lat': 33.6462, 'lon': 116.9641},
+        {'name': '六安', 'lat': 31.7337, 'lon': 116.5215},
+        {'name': '亳州', 'lat': 33.8711, 'lon': 115.7798},
+        {'name': '池州', 'lat': 30.6647, 'lon': 117.4910},
+        {'name': '宣城', 'lat': 30.9441, 'lon': 118.7543},
+        {'name': '巢湖', 'lat': 31.6236, 'lon': 117.8871},
+        {'name': '桐城', 'lat': 31.0518, 'lon': 116.9515},
+        {'name': '天长', 'lat': 32.6811, 'lon': 119.0034},
+        {'name': '明光', 'lat': 32.7815, 'lon': 118.0182},
+        {'name': '界首', 'lat': 33.2576, 'lon': 115.3744},
+        {'name': '宁国', 'lat': 30.6329, 'lon': 118.9833}
+    ];
+    
+    // 将安徽省县级城市添加到counties列表中
+    anhuiCounties.forEach(county => {
+        counties.push(county);
+    });
+    
+    // 华东地区县级城市 - 江西省
+    const jiangxiCounties = [
+        {'name': '景德镇', 'lat': 29.2690, 'lon': 117.1785},
+        {'name': '萍乡', 'lat': 27.6222, 'lon': 113.8522},
+        {'name': '九江', 'lat': 29.7196, 'lon': 116.0018},
+        {'name': '新余', 'lat': 27.8175, 'lon': 114.9171},
+        {'name': '鹰潭', 'lat': 28.2607, 'lon': 117.0688},
+        {'name': '赣州', 'lat': 25.8312, 'lon': 114.9336},
+        {'name': '宜春', 'lat': 27.8168, 'lon': 114.3889},
+        {'name': '上饶', 'lat': 28.4548, 'lon': 117.9432},
+        {'name': '吉安', 'lat': 27.1138, 'lon': 114.9929},
+        {'name': '抚州', 'lat': 27.9478, 'lon': 116.3585},
+        {'name': '德兴', 'lat': 28.9464, 'lon': 117.5787},
+        {'name': '瑞昌', 'lat': 29.6718, 'lon': 115.6678},
+        {'name': '高安', 'lat': 28.4169, 'lon': 115.3753},
+        {'name': '樟树', 'lat': 28.0565, 'lon': 115.5435},
+        {'name': '丰城', 'lat': 28.1592, 'lon': 115.7709},
+        {'name': '井冈山', 'lat': 26.7480, 'lon': 114.2893},
+        {'name': '贵溪', 'lat': 28.2926, 'lon': 117.2451},
+        {'name': '瑞金', 'lat': 25.8856, 'lon': 116.0269},
+        {'name': '南康', 'lat': 25.6617, 'lon': 114.7651},
+        {'name': '乐平', 'lat': 28.9629, 'lon': 117.1291}
+    ];
+    
+    // 将江西省县级城市添加到counties列表中
+    jiangxiCounties.forEach(county => {
+        counties.push(county);
+    });
+    
+    // 华东地区县级城市 - 福建省
+    const fujianCounties = [
+        {'name': '莆田', 'lat': 25.4541, 'lon': 119.0077},
+        {'name': '三明', 'lat': 26.2651, 'lon': 117.6390},
+        {'name': '南平', 'lat': 27.3310, 'lon': 118.1200},
+        {'name': '龙岩', 'lat': 25.0749, 'lon': 117.0176},
+        {'name': '宁德', 'lat': 26.6650, 'lon': 119.5493},
+        {'name': '漳州', 'lat': 24.5132, 'lon': 117.6471},
+        {'name': '晋江', 'lat': 24.8154, 'lon': 118.5521},
+        {'name': '石狮', 'lat': 24.7317, 'lon': 118.6481},
+        {'name': '南安', 'lat': 24.9604, 'lon': 118.3858},
+        {'name': '龙海', 'lat': 24.4464, 'lon': 117.8178},
+        {'name': '福清', 'lat': 25.7214, 'lon': 119.3843},
+        {'name': '长乐', 'lat': 25.9628, 'lon': 119.5233},
+        {'name': '邵武', 'lat': 27.3403, 'lon': 117.4933},
+        {'name': '武夷山', 'lat': 27.7566, 'lon': 118.0350},
+        {'name': '建瓯', 'lat': 27.0383, 'lon': 118.3049},
+        {'name': '永安', 'lat': 25.9414, 'lon': 117.3651},
+        {'name': '漳平', 'lat': 25.2903, 'lon': 117.4199},
+        {'name': '福安', 'lat': 27.0880, 'lon': 119.6470},
+        {'name': '福鼎', 'lat': 27.3244, 'lon': 120.2165},
+        {'name': '建阳', 'lat': 27.3320, 'lon': 118.1204}
+    ];
+    
+    // 将福建省县级城市添加到counties列表中
+    fujianCounties.forEach(county => {
+        counties.push(county);
+    });
+    
+    // 华中地区县级城市 - 河南省
+    const henanCounties = [
+        {'name': '开封', 'lat': 34.7972, 'lon': 114.3091},
+        {'name': '洛阳', 'lat': 34.6196, 'lon': 112.4540},
+        {'name': '平顶山', 'lat': 33.7350, 'lon': 113.3079},
+        {'name': '安阳', 'lat': 36.0993, 'lon': 114.3931},
+        {'name': '鹤壁', 'lat': 35.7478, 'lon': 114.2976},
+        {'name': '新乡', 'lat': 35.3031, 'lon': 113.9268},
+        {'name': '焦作', 'lat': 35.2159, 'lon': 113.2419},
+        {'name': '濮阳', 'lat': 35.7606, 'lon': 115.0294},
+        {'name': '许昌', 'lat': 34.0357, 'lon': 113.8525},
+        {'name': '漯河', 'lat': 33.5758, 'lon': 114.0460},
+        {'name': '三门峡', 'lat': 34.7781, 'lon': 111.2001},
+        {'name': '南阳', 'lat': 32.9991, 'lon': 112.5283},
+        {'name': '商丘', 'lat': 34.4149, 'lon': 115.6504},
+        {'name': '信阳', 'lat': 32.1232, 'lon': 114.0917},
+        {'name': '周口', 'lat': 33.6259, 'lon': 114.6972},
+        {'name': '驻马店', 'lat': 33.0264, 'lon': 114.0239},
+        {'name': '巩义', 'lat': 34.7480, 'lon': 113.0220},
+        {'name': '邓州', 'lat': 32.6877, 'lon': 112.0879},
+        {'name': '永城', 'lat': 33.9292, 'lon': 116.4495},
+        {'name': '汝州', 'lat': 34.1671, 'lon': 112.8445}
+    ];
+    
+    // 将河南省县级城市添加到counties列表中
+    henanCounties.forEach(county => {
+        counties.push(county);
+    });
+    
+    // 华中地区县级城市 - 湖北省
+    const hubeiCounties = [
+        {'name': '黄石', 'lat': 30.2160, 'lon': 115.0418},
+        {'name': '十堰', 'lat': 32.6369, 'lon': 110.7980},
+        {'name': '宜昌', 'lat': 30.6925, 'lon': 111.2864},
+        {'name': '襄阳', 'lat': 32.0909, 'lon': 112.1246},
+        {'name': '鄂州', 'lat': 30.3965, 'lon': 114.8905},
+        {'name': '荆门', 'lat': 31.0354, 'lon': 112.2044},
+        {'name': '孝感', 'lat': 30.9245, 'lon': 113.9170},
+        {'name': '荆州', 'lat': 30.3268, 'lon': 112.2417},
+        {'name': '黄冈', 'lat': 30.4461, 'lon': 114.8721},
+        {'name': '咸宁', 'lat': 29.8418, 'lon': 114.3221},
+        {'name': '随州', 'lat': 31.7173, 'lon': 113.3826},
+        {'name': '恩施', 'lat': 30.2965, 'lon': 109.4886},
+        {'name': '仙桃', 'lat': 30.3620, 'lon': 113.4542},
+        {'name': '潜江', 'lat': 30.4013, 'lon': 112.8993},
+        {'name': '天门', 'lat': 30.6637, 'lon': 113.1668},
+        {'name': '丹江口', 'lat': 32.5404, 'lon': 111.5135},
+        {'name': '石首', 'lat': 29.7213, 'lon': 112.4255},
+        {'name': '洪湖', 'lat': 29.8256, 'lon': 113.4788},
+        {'name': '松滋', 'lat': 30.1696, 'lon': 111.7568},
+        {'name': '宜都', 'lat': 30.3786, 'lon': 111.4501}
+    ];
+    
+    // 将湖北省县级城市添加到counties列表中
+    hubeiCounties.forEach(county => {
+        counties.push(county);
+    });
+    
+    // 华中地区县级城市 - 湖南省
+    const hunanCounties = [
+        {'name': '株洲', 'lat': 27.8355, 'lon': 113.1509},
+        {'name': '湘潭', 'lat': 27.8293, 'lon': 112.9448},
+        {'name': '衡阳', 'lat': 26.9036, 'lon': 112.5720},
+        {'name': '邵阳', 'lat': 27.2390, 'lon': 111.4677},
+        {'name': '岳阳', 'lat': 29.3559, 'lon': 113.1283},
+        {'name': '常德', 'lat': 29.0316, 'lon': 111.6983},
+        {'name': '张家界', 'lat': 29.1248, 'lon': 110.4792},
+        {'name': '益阳', 'lat': 28.5536, 'lon': 112.3559},
+        {'name': '郴州', 'lat': 25.7707, 'lon': 113.0150},
+        {'name': '永州', 'lat': 26.4350, 'lon': 111.6136},
+        {'name': '怀化', 'lat': 27.5695, 'lon': 110.0051},
+        {'name': '娄底', 'lat': 27.7281, 'lon': 112.0044},
+        {'name': '吉首', 'lat': 28.3119, 'lon': 109.7382},
+        {'name': '浏阳', 'lat': 28.1637, 'lon': 113.6434},
+        {'name': '醴陵', 'lat': 27.6457, 'lon': 113.4976},
+        {'name': '湘乡', 'lat': 27.7188, 'lon': 112.5352},
+        {'name': '韶山', 'lat': 27.9154, 'lon': 112.5279},
+        {'name': '耒阳', 'lat': 26.4222, 'lon': 112.8602},
+        {'name': '常宁', 'lat': 26.4214, 'lon': 112.3996},
+        {'name': '武冈', 'lat': 26.7281, 'lon': 110.6313}
+    ];
+    
+    // 将湖南省县级城市添加到counties列表中
+    hunanCounties.forEach(county => {
+        counties.push(county);
+    });
+    
+    // 华南地区县级城市 - 广东省
+    const guangdongCounties = [
+        {'name': '韶关', 'lat': 24.8108, 'lon': 113.5965},
+        {'name': '珠海', 'lat': 22.2710, 'lon': 113.5767},
+        {'name': '汕头', 'lat': 23.3536, 'lon': 116.6820},
+        {'name': '佛山', 'lat': 23.0292, 'lon': 113.1231},
+        {'name': '江门', 'lat': 22.5786, 'lon': 113.0781},
+        {'name': '湛江', 'lat': 21.2707, 'lon': 110.3594},
+        {'name': '茂名', 'lat': 21.6629, 'lon': 110.9253},
+        {'name': '肇庆', 'lat': 23.0471, 'lon': 112.4650},
+        {'name': '惠州', 'lat': 23.1116, 'lon': 114.4161},
+        {'name': '梅州', 'lat': 24.2885, 'lon': 116.1255},
+        {'name': '汕尾', 'lat': 22.7787, 'lon': 115.3755},
+        {'name': '河源', 'lat': 23.7430, 'lon': 114.7009},
+        {'name': '阳江', 'lat': 21.8592, 'lon': 111.9825},
+        {'name': '清远', 'lat': 23.6817, 'lon': 113.0569},
+        {'name': '东莞', 'lat': 23.0430, 'lon': 113.7633},
+        {'name': '中山', 'lat': 22.5176, 'lon': 113.3928},
+        {'name': '潮州', 'lat': 23.6617, 'lon': 116.6302},
+        {'name': '揭阳', 'lat': 23.5498, 'lon': 116.3729},
+        {'name': '云浮', 'lat': 22.9379, 'lon': 112.0465},
+        {'name': '兴宁', 'lat': 24.1365, 'lon': 115.7314}
+    ];
+    
+    // 将广东省县级城市添加到counties列表中
+    guangdongCounties.forEach(county => {
+        counties.push(county);
+    });
+    
+    // 华南地区县级城市 - 广西壮族自治区
+    const guangxiCounties = [
+        {'name': '柳州', 'lat': 24.3254, 'lon': 109.4283},
+        {'name': '桂林', 'lat': 25.2736, 'lon': 110.2907},
+        {'name': '梧州', 'lat': 23.4723, 'lon': 111.2799},
+        {'name': '北海', 'lat': 21.4810, 'lon': 109.1197},
+        {'name': '防城港', 'lat': 21.6862, 'lon': 108.3538},
+        {'name': '钦州', 'lat': 21.9797, 'lon': 108.6539},
+        {'name': '贵港', 'lat': 23.0929, 'lon': 109.6003},
+        {'name': '玉林', 'lat': 22.6544, 'lon': 110.1800},
+        {'name': '百色', 'lat': 23.9025, 'lon': 106.6183},
+        {'name': '贺州', 'lat': 24.4038, 'lon': 111.5525},
+        {'name': '河池', 'lat': 24.6926, 'lon': 108.0854},
+        {'name': '来宾', 'lat': 23.7516, 'lon': 109.2229},
+        {'name': '崇左', 'lat': 22.4154, 'lon': 107.3541},
+        {'name': '桂平', 'lat': 23.3942, 'lon': 110.0788},
+        {'name': '北流', 'lat': 22.7084, 'lon': 110.3534},
+        {'name': '岑溪', 'lat': 22.9181, 'lon': 110.9949},
+        {'name': '东兴', 'lat': 21.5278, 'lon': 107.9719},
+        {'name': '凭祥', 'lat': 22.1120, 'lon': 106.7551},
+        {'name': '合山', 'lat': 23.8066, 'lon': 108.8865},
+        {'name': '靖西', 'lat': 23.1335, 'lon': 106.4178}
+    ];
+    
+    // 将广西壮族自治区县级城市添加到counties列表中
+    guangxiCounties.forEach(county => {
+        counties.push(county);
+    });
+    
+    // 华南地区县级城市 - 海南省
+    const hainanCounties = [
+        {'name': '海口', 'lat': 20.0444, 'lon': 110.3244},
+        {'name': '三亚', 'lat': 18.2534, 'lon': 109.5120},
+        {'name': '三沙', 'lat': 16.8311, 'lon': 112.3386},
+        {'name': '儋州', 'lat': 19.5213, 'lon': 109.5809},
+        {'name': '文昌', 'lat': 19.5438, 'lon': 110.7980},
+        {'name': '琼海', 'lat': 19.2584, 'lon': 110.4750},
+        {'name': '万宁', 'lat': 18.7960, 'lon': 110.3893},
+        {'name': '东方', 'lat': 19.0968, 'lon': 108.6537},
+        {'name': '五指山', 'lat': 18.7765, 'lon': 109.5170},
+        {'name': '澄迈', 'lat': 19.7371, 'lon': 110.0047},
+        {'name': '定安', 'lat': 19.6812, 'lon': 110.3588},
+        {'name': '屯昌', 'lat': 19.3518, 'lon': 110.1029},
+        {'name': '临高', 'lat': 19.9124, 'lon': 109.6901},
+        {'name': '白沙', 'lat': 19.2245, 'lon': 109.4528},
+        {'name': '昌江', 'lat': 19.2980, 'lon': 109.0554},
+        {'name': '乐东', 'lat': 18.7476, 'lon': 109.1757},
+        {'name': '陵水', 'lat': 18.5057, 'lon': 110.0372},
+        {'name': '保亭', 'lat': 18.6377, 'lon': 109.7022},
+        {'name': '琼中', 'lat': 19.0356, 'lon': 109.8391},
+        {'name': '洋浦', 'lat': 19.7397, 'lon': 109.1868}
+    ];
+    
+    // 将海南省县级城市添加到counties列表中
+    hainanCounties.forEach(county => {
+        counties.push(county);
+    });
+    
+    // 华北地区县级城市 - 内蒙古自治区
+    const innerMongoliaCounties = [
+        {'name': '呼和浩特', 'lat': 40.8427, 'lon': 111.7491},
+        {'name': '包头', 'lat': 40.6571, 'lon': 109.8399},
+        {'name': '乌海', 'lat': 39.6733, 'lon': 106.8253},
+        {'name': '赤峰', 'lat': 42.2584, 'lon': 118.8883},
+        {'name': '通辽', 'lat': 43.6523, 'lon': 122.2433},
+        {'name': '鄂尔多斯', 'lat': 39.6087, 'lon': 109.7811},
+        {'name': '呼伦贝尔', 'lat': 49.2121, 'lon': 119.7659},
+        {'name': '巴彦淖尔', 'lat': 40.7431, 'lon': 107.3877},
+        {'name': '乌兰察布', 'lat': 40.9945, 'lon': 113.1144},
+        {'name': '兴安盟', 'lat': 46.0876, 'lon': 122.0383},
+        {'name': '锡林郭勒', 'lat': 43.9332, 'lon': 116.0475},
+        {'name': '阿拉善', 'lat': 38.8430, 'lon': 105.7295},
+        {'name': '满洲里', 'lat': 49.5977, 'lon': 117.3788},
+        {'name': '二连浩特', 'lat': 43.6500, 'lon': 111.9500},
+        {'name': '霍林郭勒', 'lat': 45.5320, 'lon': 119.6636},
+        {'name': '乌兰浩特', 'lat': 46.0728, 'lon': 122.0940},
+        {'name': '阿尔山', 'lat': 47.1771, 'lon': 119.9439},
+        {'name': '扎兰屯', 'lat': 48.0136, 'lon': 122.7377},
+        {'name': '牙克石', 'lat': 49.2856, 'lon': 120.7114},
+        {'name': '根河', 'lat': 50.7781, 'lon': 121.5200}
+    ];
+    
+    // 将内蒙古自治区县级城市添加到counties列表中
+    innerMongoliaCounties.forEach(county => {
+        counties.push(county);
+    });
+    
+    // 华北地区县级城市 - 山西省
+    const shanxiCounties = [
+        {'name': '太原', 'lat': 37.8734, 'lon': 112.5624},
+        {'name': '大同', 'lat': 40.0903, 'lon': 113.2946},
+        {'name': '阳泉', 'lat': 37.8575, 'lon': 113.5839},
+        {'name': '长治', 'lat': 36.1929, 'lon': 113.1136},
+        {'name': '晋城', 'lat': 35.4976, 'lon': 112.8513},
+        {'name': '朔州', 'lat': 39.3242, 'lon': 112.4693},
+        {'name': '晋中', 'lat': 37.6926, 'lon': 112.7385},
+        {'name': '运城', 'lat': 35.0260, 'lon': 111.0069},
+        {'name': '忻州', 'lat': 38.4169, 'lon': 112.7341},
+        {'name': '临汾', 'lat': 36.0887, 'lon': 111.5187},
+        {'name': '吕梁', 'lat': 37.5196, 'lon': 111.1346},
+        {'name': '高平', 'lat': 35.7981, 'lon': 112.9237},
+        {'name': '原平', 'lat': 38.7306, 'lon': 112.7109},
+        {'name': '潞城', 'lat': 36.3342, 'lon': 113.2285},
+        {'name': '介休', 'lat': 37.0271, 'lon': 111.9169},
+        {'name': '侯马', 'lat': 35.6181, 'lon': 111.3719},
+        {'name': '霍州', 'lat': 36.5681, 'lon': 111.7224},
+        {'name': '孝义', 'lat': 37.1446, 'lon': 111.7782},
+        {'name': '汾阳', 'lat': 37.2682, 'lon': 111.7882},
+        {'name': '怀仁', 'lat': 39.8279, 'lon': 113.1030}
+    ];
+    
+    // 将山西省县级城市添加到counties列表中
+    shanxiCounties.forEach(county => {
+        counties.push(county);
+    });
+    
+    // 东北地区县级城市 - 辽宁省
+    const liaoningCounties = [
+        {'name': '沈阳', 'lat': 41.8057, 'lon': 123.4315},
+        {'name': '大连', 'lat': 38.9140, 'lon': 121.6147},
+        {'name': '鞍山', 'lat': 41.1075, 'lon': 122.9955},
+        {'name': '本溪', 'lat': 41.2866, 'lon': 123.7717},
+        {'name': '丹东', 'lat': 40.1296, 'lon': 124.3810}
+    ];
+    
+    // 将辽宁省县级城市添加到counties列表中
+    liaoningCounties.forEach(county => {
+        counties.push(county);
+    });
+    
+    // 东北地区县级城市 - 吉林省
+    const jilinCounties = [
+        {'name': '长春', 'lat': 43.8170, 'lon': 125.3240},
+        {'name': '吉林', 'lat': 43.8378, 'lon': 126.5495},
+        {'name': '四平', 'lat': 43.1616, 'lon': 124.3508},
+        {'name': '辽源', 'lat': 42.8877, 'lon': 125.1453},
+    ];
+    
+    // 将吉林省县级城市添加到counties列表中
+    jilinCounties.forEach(county => {
+        counties.push(county);
+    });
+    
     // 添加所有城市标记
     cities.forEach(city => {
         addCityMarker(city);
@@ -692,12 +1238,12 @@ document.addEventListener('DOMContentLoaded', function() {
         // 判断是否已存在此城市标记
         if (cityMarkers[city.name]) return;
         
-        // 创建标记
+        // 创建标记，使用清晰可见的天气图标
         const marker = L.marker([city.lat, city.lon], {
-            // 先使用默认图标
+            // 使用更清晰的默认图标
             icon: L.divIcon({
-                className: 'weather-icon',
-                html: '<div class="weather-marker"><img src="static/weather_icon/yintian.png" alt="Weather"></div>',
+                className: 'weather-icon-container', // 修改了类名以区分
+                html: '<div class="weather-marker" style="background: none;"><img src="static/weather_icon/sunny.png" alt="Weather" style="width: 40px; height: 40px; z-index: 1000;"></div>',
                 iconSize: [40, 40],
                 iconAnchor: [20, 40],
                 popupAnchor: [0, -40]
@@ -718,6 +1264,9 @@ document.addEventListener('DOMContentLoaded', function() {
         marker.on('click', function() {
             fetchCityWeather(city, true);
         });
+
+        // 立即获取天气数据
+        fetchCityWeather(city, false);
     }
 
     // 获取城市天气信息
@@ -850,13 +1399,41 @@ document.addEventListener('DOMContentLoaded', function() {
             // 获取适当的图标
             const iconCode = weatherData.icon || 'default';
             const weatherDescription = weatherData.weather || '';
-            const iconPath = getLocalIconByWeatherCode(iconCode, weatherDescription);
+            
+            // 直接使用图标路径
+            let iconPath = '';
+            
+            // 根据天气图标代码或描述选择图标
+            if (weatherDescription.includes('晴') || iconCode.startsWith('01')) {
+                iconPath = 'static/weather_icon/sunny.png';  // 晴天
+            } else if (weatherDescription.includes('云') || iconCode.startsWith('02') || iconCode.startsWith('03') || iconCode.startsWith('04')) {
+                iconPath = 'static/weather_icon/douyun.png';  // 多云
+            } else if (weatherDescription.includes('阴') || iconCode.startsWith('50')) {
+                iconPath = 'static/weather_icon/yintian.png';  // 阴天
+            } else if (weatherDescription.includes('小雨') || iconCode.startsWith('09')) {
+                iconPath = 'static/weather_icon/xiaoyu.png';  // 小雨
+            } else if (weatherDescription.includes('中雨')) {
+                iconPath = 'static/weather_icon/zhongyu.png';  // 中雨
+            } else if (weatherDescription.includes('大雨') || iconCode.startsWith('10')) {
+                iconPath = 'static/weather_icon/dayu.png';  // 大雨
+            } else if (weatherDescription.includes('雷') || iconCode.startsWith('11')) {
+                iconPath = 'static/weather_icon/leizhenyu.png';  // 雷雨
+            } else if (weatherDescription.includes('雪') || iconCode.startsWith('13')) {
+                iconPath = 'static/weather_icon/snow.png';  // 雪
+            } else {
+                iconPath = 'static/weather_icon/sunny.png';  // 默认使用晴天
+            }
             
             console.log(`城市 ${cityName} 使用图标: ${iconPath}`);
             
-            // 创建标记图标
-            const isCounty = false; // 这是城市，不是县级市
-            const newIcon = createWeatherIcon(iconCode, weatherDescription, isCounty);
+            // 直接设置图标HTML
+            const newIcon = L.divIcon({
+                className: 'weather-icon-container',
+                html: `<div class="weather-marker" style="background: none;"><img src="${iconPath}" alt="Weather" style="width: 40px; height: 40px; z-index: 1000;"></div>`,
+                iconSize: [40, 40],
+                iconAnchor: [20, 40],
+                popupAnchor: [0, -40]
+            });
             
             // 更新标记图标
             marker.setIcon(newIcon);
@@ -1129,8 +1706,8 @@ document.addEventListener('DOMContentLoaded', function() {
                 '11n': 'leizhenyu.png',
                 '13d': 'snow.png',
                 '13n': 'snow.png',
-                '50d': 'mai.png',
-                '50n': 'mai.png'
+                '50d': 'yintian.png',  // 修改: 从mai.png改为yintian.png
+                '50n': 'yintian.png'   // 修改: 从mai.png改为yintian.png
             };
             
             // 中文描述映射（作为备用）
@@ -1149,8 +1726,8 @@ document.addEventListener('DOMContentLoaded', function() {
                 '小雪': 'snow.png',
                 '中雪': 'snow.png',
                 '大雪': 'snow.png',
-                '雾': 'wu.png',
-                '霾': 'mai.png'
+                '雾': 'yintian.png',  // 修改: 从wu.png改为yintian.png
+                '霾': 'yintian.png'   // 修改: 从mai.png改为yintian.png
             };
             
             // 首先尝试使用图标代码
